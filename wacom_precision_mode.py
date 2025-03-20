@@ -12,8 +12,8 @@ class Stylus:
     def __init__(self) -> None:
         self.name       :str    = ""
         self.id         :int
-        self.x          :float
-        self.y          :float
+        self.x          :int
+        self.y          :int
 
     def __str__(self) -> str:
         return ", ".join(f"{key}: {value}" for key, value in vars(self).items())
@@ -24,6 +24,8 @@ class Monitor:
         self.height     :int
         self.max_width  :int = 0
         self.max_height :int = 0
+        self.offset_x   :int
+        self.offset_y   :int
 
     def __str__(self) -> str:
         return ", ".join(f"{key}: {value}" for key, value in vars(self).items())
@@ -56,8 +58,11 @@ def get_monitor_info() -> None:
         monitor.max_height = max(monitor.max_height, mon["y"] + mon["height_in_pixels"])
 
         if stylus.x >= mon["x"] and stylus.x <= mon["x"] + mon["width_in_pixels"]:
-               monitor.width = mon["width_in_pixels"]
-               monitor.height = mon["height_in_pixels"]
+            monitor.width = mon["width_in_pixels"]
+            monitor.height = mon["height_in_pixels"]
+            monitor.offset_x = mon["x"]
+            monitor.offset_y = mon["y"]
+
 
 def set_ctm(scale, scale_x=None, scale_y=None, offset_x=None, offset_y=None) -> None:
     # don't use `... = ... or ...` because given values may be zero
@@ -118,7 +123,7 @@ def parse_cli_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scale", type=float, help="Set precision scale (float between 0 and 1).")
     parser.add_argument("--action", type=str, required=True, help="toggle|enable|disable precision mode.")
-    #parser.add_argument("--gui", action="store_true", help="Enable GUI mode")
+    parser.add_argument("--gui", action="store_true", help="Enable GUI mode.")
     args = parser.parse_args()
 
     if args.scale is not None and not (0 < args.scale < 1):
@@ -149,3 +154,10 @@ if __name__ == "__main__":
     else:
         disable_precision_mode()
 
+    if args.gui and is_precision_mode_enabled():
+        from gui import gui_init
+        gui_init(stylus.x - monitor.offset_x,
+                 stylus.y - monitor.offset_y,
+                 int(args.scale * monitor.width),
+                 int(args.scale * monitor.height))
+        exit(0)
