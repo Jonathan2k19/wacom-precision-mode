@@ -5,12 +5,6 @@ from PyQt6.QtWidgets import QApplication, QWidget
 from PyQt6.QtGui import QPainter, QColor, QGuiApplication, QCursor
 from PyQt6.QtCore import Qt, QRect
 
-# TODO:
-# - add "+", "-" buttons that adjust scale
-#   -> *partially* transparent inputs (everything but buttons pass through)
-# - doesn't work if target_area spread *multiple* screens
-#   (only the one that contains the cursor is overlayed)
-
 class Overlay(QWidget):
     def __init__(self, x:int, y:int, w:int, h:int):
         super().__init__()

@@ -1,7 +1,5 @@
 #! /usr/bin/python3
 
-# TODO: how to get/set CTM with Xlib only
-
 import os
 import signal
 import subprocess
