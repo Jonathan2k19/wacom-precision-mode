@@ -9,7 +9,7 @@ Install requirements:
 - `--gui` requires `pip install PyQt6`
 
 There's a `requirements.txt` that contains those packets.
-Install them via `pip install requirements.txt`.
+Install them via `pip install -r requirements.txt`.
 
 You might want to install the packets into a virtual environment:
 ```bash
