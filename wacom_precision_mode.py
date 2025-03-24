@@ -3,6 +3,7 @@
 # TODO: how to get/set CTM with Xlib only
 
 import os
+import signal
 import subprocess
 import argparse
 from Xlib import display
@@ -34,6 +35,8 @@ stylus = Stylus()
 monitor = Monitor()
 d = display.Display()
 CTM_FILE = "/tmp/.wacom-precision-mode-ctm"
+PID_FILE = "/tmp/.wacom-precision-mode-pid"
+FILE_PERMISSIONS = 0o600
 
 def error(msg) -> None:
     print("ERROR:", msg)
@@ -96,6 +99,7 @@ def backup_ctm() -> None:
     if not is_precision_mode_enabled():
         with open(CTM_FILE, "w") as f:
             f.write(" ".join(get_ctm()))
+        os.chmod(CTM_FILE, FILE_PERMISSIONS)
 
 def restore_ctm() -> list[float]:
     with open(CTM_FILE, "r") as f:
@@ -106,9 +110,25 @@ def restore_ctm() -> list[float]:
     os.remove(CTM_FILE)
     return ctm
 
+def backup_pid() -> None:
+    with open(PID_FILE, "w") as f:
+        f.write(str(os.getpid()))
+    os.chmod(PID_FILE, FILE_PERMISSIONS)
+
+def restore_pid() -> int:
+    assert os.path.exists(PID_FILE)
+    with open(PID_FILE, "r") as f:
+        return int(f.readline())
+
+def gui_kill() -> None:
+    if os.path.exists(PID_FILE):
+        os.kill(restore_pid(), signal.SIGTERM)
+        os.remove(PID_FILE)
+
 def disable_precision_mode() -> None:
     if not is_precision_mode_enabled():
         return
+    gui_kill()
     ctm = restore_ctm()
     set_ctm(1.0, ctm[0], ctm[4], ctm[2], ctm[5])
     print("Disabled precision mode.")
@@ -120,20 +140,25 @@ def toggle_precision_mode(scale) -> None:
         enable_precision_mode(scale)
 
 def parse_cli_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--scale", type=float, help="Set precision scale (float between 0 and 1).")
-    parser.add_argument("--action", type=str, required=True, help="toggle|enable|disable precision mode.")
-    parser.add_argument("--gui", action="store_true", help="Enable GUI mode.")
+    parser = argparse.ArgumentParser(description="Precision mode for Wacom tablets.")
+    parser.add_argument("--scale", type=float,
+                        help="Precision scale factor (float between 0 and 1, exclusive).")
+    parser.add_argument("--action", type=str, required=True,
+                        choices=["toggle", "enable", "disable"],
+                        help="Action to perform: 'toggle', 'enable', or 'disable' precision mode.")
+    parser.add_argument("--gui", action="store_true",
+                        help="Launch with GUI overlay.")
+
     args = parser.parse_args()
 
     if args.scale is not None and not (0 < args.scale < 1):
-        error("--scale must be between 0 and 1 (both exclusive).")
+        error("--scale must be between 0 and 1 (exclusive).")
 
     if args.action and not args.action in ("toggle", "enable", "disable"):
         error("--action must be one of toggle|enable|disable.")
 
     if args.action in ("toggle", "enable") and args.scale is None:
-        error("--scale must be set if --action toggle|enable.")
+        error("--scale must be specified when using --action 'toggle' or 'enable'.")
 
     return args
 
@@ -156,6 +181,7 @@ if __name__ == "__main__":
 
     if args.gui and is_precision_mode_enabled():
         from gui import gui_init
+        backup_pid()
         gui_init(stylus.x - monitor.offset_x,
                  stylus.y - monitor.offset_y,
                  int(args.scale * monitor.width),

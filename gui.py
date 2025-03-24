@@ -1,17 +1,15 @@
 import sys
+import signal
 
 from PyQt6.QtWidgets import QApplication, QWidget
 from PyQt6.QtGui import QPainter, QColor, QGuiApplication, QCursor
 from PyQt6.QtCore import Qt, QRect
 
-from wacom_precision_mode import error
-
-# TODO:FIXME:
+# TODO:
 # - add "+", "-" buttons that adjust scale
 #   -> *partially* transparent inputs (everything but buttons pass through)
 # - doesn't work if target_area spread *multiple* screens
 #   (only the one that contains the cursor is overlayed)
-# - kill the GUI on --disable
 
 class Overlay(QWidget):
     def __init__(self, x:int, y:int, w:int, h:int):
@@ -19,7 +17,9 @@ class Overlay(QWidget):
         self.target_area = (x, y, w, h)
 
         # overlay applies to screen that contains the cursor
-        self.setGeometry(QGuiApplication.screenAt(QCursor.pos()).geometry())
+        screen = QGuiApplication.screenAt(QCursor.pos())
+        assert screen
+        self.setGeometry(screen.geometry())
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
@@ -33,7 +33,7 @@ class Overlay(QWidget):
 
         self.showFullScreen()
 
-    def paintEvent(self, event):
+    def paintEvent(self, a0):
         # grey-out everything but the target_area
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -43,9 +43,12 @@ class Overlay(QWidget):
         painter.end()
 
 def gui_init(x:int = 100, y:int = 100, w:int = 100, h:int = 100):
-    print("initializing gui...")
-    if x < 0 or y < 0 or w <= 0 or h <= 0:
-        error("GUI: x < 0 or y < 0 or w <= 0 or h <= 0")
+    assert x >= 0 and y >= 0 and w > 0 and h > 0
+
+    # Use OS's default signal handlers for SIGTERM or SIGINT.
+    # See https://stackoverflow.com/questions/4938723.
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     app = QApplication(sys.argv)
     _ = Overlay(x, y, w, h)
