@@ -13,7 +13,7 @@ receive mouse/keyboard/... inputs.
 
 ![demo](images/demo.gif)
 
-The keyboard shortcuts used in the commands:
+The keyboard shortcuts used in the demo:
 ```bash
 # 0.5 scale (green in demo)
 /path/to/venv/bin/python /path/to/wacom_precision_mode.py --scale 0.5 --action toggle --gui
