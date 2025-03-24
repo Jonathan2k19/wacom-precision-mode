@@ -11,16 +11,19 @@ receive mouse/keyboard/... inputs.
 
 ## Demo
 
-![demo](images/demo.mp4)
+![demo](images/demo.gif)
 
 The keyboard shortcuts used in the commands:
 ```bash
 # 0.5 scale (green in demo)
 /path/to/venv/bin/python /path/to/wacom_precision_mode.py --scale 0.5 --action toggle --gui
 
-# 0.3 scale (red in demo)
-/path/to/venv/bin/python /path/to/wacom_precision_mode.py --scale 0.3 --action toggle --gui
+# 0.2 scale (red in demo)
+/path/to/venv/bin/python /path/to/wacom_precision_mode.py --scale 0.2 --action toggle --gui
 ```
+
+Note that I've accidentally written `scale 0.3` in the video, while it's been
+0.2.
 
 ## Installation
 
@@ -66,7 +69,8 @@ button), make sure to use the Python interpreter inside the virtual environment
 - In multi-monitor setups, the $x$-offset is $0$ for the leftmost monitor and
   positive for others.
 
-Sketch (green area = accessible target area if precision mode is enabled):
+Sketch of example layout with two monitors of different size (green area =
+target area if precision mode is enabled):
 
 ![sketch](images/sketch.drawio.svg)
 
@@ -98,17 +102,17 @@ The default (precision mode disabled) CTM is
 ```
 
 which is the 3x3 identity matrix
-$$
+```math
 \begin{bmatrix}1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1\end{bmatrix}
-$$
+```
 
 denoted in row-major order.
 
 To restrict the stylus movement to a smaller area, we modify the identity-CTM in
 four entries:
-$$
+```math
 \begin{bmatrix}x_{scale} & 0 & x_{offset} \\ 0 & y_{scale} & y_{offset} \\ 0 & 0 & 1\end{bmatrix}
-$$
+```
 
 Where:
 - $x,y_{offset}$: set to the $x,y$-position of the stylus to position the stylus
@@ -119,11 +123,11 @@ Where:
   that with the specified `--scale`.
 
 We end up with the following CTM:
-$$
+```math
 \begin{bmatrix}
 scale \cdot \frac{width_{mon}}{width_{total}} & 0 & \frac{x_{stylus}}{width_{total}} \\
 0 & scale \cdot \frac{height_{mon}}{height_{total}} & \frac{y_{stylus}}{height_{total}} \\
 0 & 0 & 1
 \end{bmatrix}
-$$
+```
 
